@@ -1,0 +1,3 @@
+data
+nbs/*.csv
+__pycache__
