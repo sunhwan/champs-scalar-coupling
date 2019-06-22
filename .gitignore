@@ -1,6 +1,7 @@
 data
-nbs/*.csv
+*.csv
 __pycache__
 .ipynb_checkpoints
-hachette/models
-hachette/features
+trees/models
+trees/features
+trees/submissions
