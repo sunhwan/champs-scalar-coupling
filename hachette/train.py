@@ -65,9 +65,11 @@ if __name__ == '__main__':
         model.fit(train[col].drop(['type'], axis=1), train['scalar_coupling_constant'])
         pickle.dump(model, open(MODEL/f'etr_model_{args.name}{suffix}.pkl', 'wb'))
 
-        y_pred = reg.predict(test.drop(['id', 'type'], axis=1))
+        y_pred = model.predict(test.drop(['id', 'type'], axis=1))
         test['scalar_coupling_constant']  = y_pred
         SUBMISSION = Path(args.submission_dir)
+        if not SUBMISSION.exists():
+            os.mkdir(SUBMISSION)
         test[['id', 'scalar_coupling_constant']].to_csv(SUBMISSION/f'submission_{args.name}{suffix}.csv', index=False) #float_format='%.9f'
 
     if args.model == 'LightGBM':

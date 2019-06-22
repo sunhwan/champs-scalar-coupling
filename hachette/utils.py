@@ -43,3 +43,47 @@ def group_mean_log_mae(y_true, y_pred, types, floor=1e-9):
     maes = (y_true-y_pred).abs().groupby(types).mean()
     return np.log(maes.map(lambda x: max(x, floor))).mean()
 
+# for atomic features
+# rdkit & xyz2mol
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from rdkit.Chem.rdmolops import SanitizeFlags
+
+# https://github.com/jensengroup/xyz2mol
+from xyz2mol import xyz2mol, xyz2AC, AC2mol, read_xyz_file
+from pathlib import Path
+import pickle
+
+def chiral_stereo_check(mol):
+    # avoid sanitization error e.g., dsgdb9nsd_037900.xyz
+    Chem.SanitizeMol(mol, SanitizeFlags.SANITIZE_ALL - SanitizeFlags.SANITIZE_PROPERTIES)
+    Chem.DetectBondStereochemistry(mol,-1)
+    # ignore stereochemistry for now
+    #Chem.AssignStereochemistry(mol, flagPossibleStereoCenters=True, force=True)
+    #Chem.AssignAtomChiralTagsFromStructure(mol,-1)
+    return mol
+
+def xyz2mol(atomicNumList,charge,xyz_coordinates,charged_fragments,quick):
+    AC,mol = xyz2AC(atomicNumList,xyz_coordinates)
+    new_mol = AC2mol(mol,AC,atomicNumList,charge,charged_fragments,quick)
+    new_mol = chiral_stereo_check(new_mol)
+    return new_mol
+
+def MolFromXYZ(filename):
+    charged_fragments = True
+    quick = True
+    cache_filename = filename.parent/f'{filename.stem}.pkl'
+    if cache_filename.exists():
+        return pickle.load(open(cache_filename, 'rb'))
+    else:
+        try:
+            atomicNumList, charge, xyz_coordinates = read_xyz_file(filename)
+            mol = xyz2mol(atomicNumList, charge, xyz_coordinates, charged_fragments, quick)
+            pickle.dump(mol, open(cache_filename, 'wb'))
+        except:
+            print(filename)
+    return mol
+
+def MolFromXYZ_(filename):
+    return filename.stem, MolFromXYZ(filename)
+
